@@ -31,12 +31,15 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 // define the fractal parameters
 #define N 4 // order of Daubechies wavelet
 #define D 1.4 // fractal dimension
-#define M 200 // number of iterations
-#define S 0.5 // scaling factor
+#define M 1500 // number of iterations
+float S = 0.1; // scaling factor
 
 // define the seed points
-float xseed0 = 0.5;
-float yseed0 = 0.5;
+float xseed0 = 1;
+float yseed0 = 1;
+
+uint32_t lastUpdate = 0 ; 
+#define UPDATE_RATE 100 //100ms update rate to not waste cycles on each pixel
 
 // define the wavelet coefficients
 float w_h[N] = {0.1629, 0.5055, 0.4461, -0.0198};
@@ -70,12 +73,19 @@ void fractal_effect(int x, int y, int w, int h, uint16_t color) {
     // map the coordinates to the display pixels
     int px = fmap(xnew, 0, 1, x, x + w);
     int py = fmap(ynew, 0, 1, y, y + h);
+
 //  display.setCursor(0, 0);
 //  display.println(xprim);
 
     // draw a pixel on the display
     display.drawPixel(px, py, color);
-    display.display();
+   // update rate check
+    if (millis() - lastUpdate >= UPDATE_RATE) {
+      // Update the last update time
+      display.display();
+      lastUpdate = millis();
+
+    }
   }
   
 }
@@ -95,18 +105,22 @@ void setup() {
   display.println("Fractal Visual Effect");
   display.display();
   // Wait for 2 seconds
-  delay(2000);
+  delay(1000);
   // Clear the display buffer
   display.clearDisplay();
 }
 
 // Define the loop function
 void loop() {
+  for (int S_factor = 0; S_factor < 10; S_factor++) {
   display.clearDisplay();
+  S = S + 0.1; 
   fractal_effect(0, 0, 128, 64,WHITE);
   // Display the buffer
   display.display();
-  delay(2000);
+  delay(500);
+  }
+  delay(1000);
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("loop");
