@@ -30,8 +30,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 // define the fractal parameters
 #define N 4 // order of Daubechies wavelet
-#define D 1.5 // fractal dimension
-#define M 1500 // number of iterations
+#define D 1.3 // fractal dimension
+#define M 400 // number of iterations
 float S = 0.1; // scaling factor
 
 // define the seed points
@@ -39,10 +39,12 @@ float xseed0 = 128;
 float yseed0 = 64;
 
 uint32_t lastUpdate = 0 ; 
-#define UPDATE_RATE 100 //100ms update rate to not waste cycles on each pixel
+uint32_t calc_time = 0; // time spent for drawing
+#define UPDATE_RATE 50 //100ms update rate to not waste cycles on each pixel
 
 // define the wavelet coefficients
 float w_h[N] = {0.1629, 0.5055, 0.4461, -0.0198};
+//float w_h[N] = {0.6830127, 1.1830127, 0.3169873, -0.1830127}; // from wikipedia
 float w_g[N] = {-0.0075, 0.0233, 0.0218, -0.1323};
 
 float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -54,28 +56,36 @@ void fractal_effect(int x, int y, int w, int h, uint16_t color) {
   // initialize the x and y coordinates of the seed points
   float xprim = random(xseed0)/xseed0;
   float yprim = random(yseed0)/yseed0;
+
+//  float xprim = 0.0;
+//  float yprim = 0.0;
+
   
   // iterate the wavelet transform M times
   for (int i = 0; i < M; i++) {
     // calculate the new x and y coordinates using the wavelet coefficients
+//    float xnew = xprim;
+//    float ynew = yprim;
     float xnew = 0;
     float ynew = 0;
+
+    
     for (uint8_t j = 0; j < N; j++) {
-      xnew += w_h[j] * cos(2 * PI * j * xprim) - w_g[j] * sin(2 * PI * j * yprim);
-      ynew += w_h[j] * sin(2 * PI * j * xprim) + w_g[j] * cos(2 * PI * j * yprim);
+      xnew += w_h[j] * cos(D * PI * j * xprim) - w_g[j] * sin(D * PI * j * yprim);
+      ynew += w_h[j] * sin(D * PI * j * xprim) + w_g[j] * cos(D * PI * j * yprim);
     }
     // scale the coordinates by the factor S
-    xprim = xnew;
-    yprim = ynew;
+//    xprim = xnew;
+//    yprim = ynew;
 
     xnew *= S;
     ynew *= S;
     // update the coordinates
-//    xprim = xnew;
-//    yprim = ynew;
+    xprim = xnew;
+    yprim = ynew;
     // map the coordinates to the display pixels
-//    int px = fmap(xnew, 0, 1, x, x + w);
-//    int py = fmap(ynew, 0, 1, y, y + h);
+//    int px = fmap(xnew, -1, 1, x, x + w);
+//    int py = fmap(ynew, -1, 1, y, y + h);
 //    int px = map((xnew+abs(S))*128, 0, 128, x, x + w);
 //    int py = map((ynew+abs(S))*64, 0, 64, y, y + h);
     int px = map(xnew*128, -128, 128, x, x + w);
@@ -121,21 +131,45 @@ void setup() {
 // Define the loop function
 void loop() {
   S = -0.5;
-  for (int S_factor = 0; S_factor < 120; S_factor++) {
-  display.clearDisplay();
-  display.setCursor(64, 0);
-  display.println(S);
-
-  S = S + 0.02; 
-  fractal_effect(0, 0, 128, 64,WHITE);
-  // Display the buffer
-  delay(100);
-  }
-  delay(100);
+  for (int S_factor = 0; S_factor < 60; S_factor++) {
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("loop");
+  display.print(S);
+  S = S + 0.02; 
+  calc_time = millis();
+  fractal_effect(0, 0, 128, 64,WHITE);
+  // Display the buffer
+
+  display.setCursor(64, 0);
+  uint32_t calc_time_result = millis()-calc_time;
+  display.print(calc_time_result);
   display.display();
-  delay(200);
+ 
+//  delay(50);
+  }
+
+  S = +0.5;
+  for (int S_factor = 0; S_factor < 60; S_factor++) {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print(S);
+  S = S - 0.02; 
+  calc_time = millis();
+  fractal_effect(0, 0, 128, 64,WHITE);
+  // Display the buffer
+
+  display.setCursor(64, 0);
+  uint32_t calc_time_result = millis()-calc_time;
+  display.print(calc_time_result);
+  display.display();
+  //delay(50);
+  }
+
+//  delay(100);
+//  display.clearDisplay();
+//  display.setCursor(0, 0);
+//  display.println("loop");
+//  display.display();
+//  delay(200);
   // Do nothing
 }
