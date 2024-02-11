@@ -30,13 +30,13 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 // define the fractal parameters
 #define N 4 // order of Daubechies wavelet
-#define D 1.4 // fractal dimension
+#define D 1.5 // fractal dimension
 #define M 1500 // number of iterations
 float S = 0.1; // scaling factor
 
 // define the seed points
-float xseed0 = 1;
-float yseed0 = 1;
+float xseed0 = 128;
+float yseed0 = 64;
 
 uint32_t lastUpdate = 0 ; 
 #define UPDATE_RATE 100 //100ms update rate to not waste cycles on each pixel
@@ -52,8 +52,8 @@ float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
 // define a function to draw a fractal on the display
 void fractal_effect(int x, int y, int w, int h, uint16_t color) {
   // initialize the x and y coordinates of the seed points
-  float xprim = random(xseed0);
-  float yprim = random(yseed0);
+  float xprim = random(xseed0)/xseed0;
+  float yprim = random(yseed0)/yseed0;
   
   // iterate the wavelet transform M times
   for (int i = 0; i < M; i++) {
@@ -65,14 +65,22 @@ void fractal_effect(int x, int y, int w, int h, uint16_t color) {
       ynew += w_h[j] * sin(2 * PI * j * xprim) + w_g[j] * cos(2 * PI * j * yprim);
     }
     // scale the coordinates by the factor S
+    xprim = xnew;
+    yprim = ynew;
+
     xnew *= S;
     ynew *= S;
     // update the coordinates
-    xprim = xnew;
-    yprim = ynew;
+//    xprim = xnew;
+//    yprim = ynew;
     // map the coordinates to the display pixels
-    int px = fmap(xnew, 0, 1, x, x + w);
-    int py = fmap(ynew, 0, 1, y, y + h);
+//    int px = fmap(xnew, 0, 1, x, x + w);
+//    int py = fmap(ynew, 0, 1, y, y + h);
+//    int px = map((xnew+abs(S))*128, 0, 128, x, x + w);
+//    int py = map((ynew+abs(S))*64, 0, 64, y, y + h);
+    int px = map(xnew*128, -128, 128, x, x + w);
+    int py = map(ynew*64, -64, 64, y, y + h);
+
 
 //  display.setCursor(0, 0);
 //  display.println(xprim);
@@ -112,15 +120,18 @@ void setup() {
 
 // Define the loop function
 void loop() {
-  for (int S_factor = 0; S_factor < 10; S_factor++) {
+  S = -0.5;
+  for (int S_factor = 0; S_factor < 120; S_factor++) {
   display.clearDisplay();
-  S = S + 0.1; 
+  display.setCursor(64, 0);
+  display.println(S);
+
+  S = S + 0.02; 
   fractal_effect(0, 0, 128, 64,WHITE);
   // Display the buffer
-  display.display();
-  delay(500);
+  delay(100);
   }
-  delay(1000);
+  delay(100);
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("loop");
